@@ -1,111 +1,86 @@
-import { useState, useEffect, useRef } from 'react';
 import { useStore } from './store';
-import ContactCard from './ContactCard';
-import SettingsPanel from './SettingsPanel';
 
 export default function Overlay() {
-  const guideMessage = useStore(s => s.guideMessage);
-  const setGuideMessage = useStore(s => s.setGuideMessage);
-  const selectedProject = useStore(s => s.selectedProject);
-  const setSelectedProject = useStore(s => s.setSelectedProject);
-  const volume = useStore(s => s.volume);
-  const guideLanguage = useStore(s => s.guideLanguage);
-  const [muted, setMuted] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const {
+    guideMessage,
+    selectedProject,
+    setSelectedProject,
+    primaryColor,
+    setGuideMessage,
+    setGuideLanguage,
+    guideLanguage,
+    setProjects,
+    projects,
+    arName,
+    enName,
+    email,
+    phone
+  } = useStore();
 
-  useEffect(() => {
-    const audio = new Audio('/ambient.mp3');
-    audio.loop = true;
-    audio.volume = volume;
-    audioRef.current = audio;
-    const playOnTouch = () => {
-      if (!muted && audioRef.current) {
-        audioRef.current.play().catch(() => {});
-      }
-      window.removeEventListener('touchstart', playOnTouch);
-    };
-    window.addEventListener('touchstart', playOnTouch);
-    return () => window.removeEventListener('touchstart', playOnTouch);
-  }, []);
+  const allProjects = [
+    { id: 1, title: 'مشروع React', type: 'برمجة', info: 'موقع تفاعلي بـ React', pos: [-2, 0, 0] as [number, number, number] },
+    { id: 2, title: 'تصميم شعار', type: 'تصميم', info: 'هوية بصرية كاملة', pos: [2, 0, 0] as [number, number, number] },
+    { id: 3, title: 'متجر إلكتروني', type: 'برمجة', info: 'Next.js + Stripe', pos: [0, 0, -3] as [number, number, number] },
+  ];
 
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
-
-  const toggleMute = () => {
-    if (!audioRef.current) return;
-    if (muted) {
-      audioRef.current.play().catch(() => {});
-      setMuted(false);
-    } else {
-      audioRef.current.pause();
-      setMuted(true);
-    }
+  const handleShowAll = () => {
+    setProjects(allProjects);
+    setGuideMessage(guideLanguage === 'ar' ? 'دي كل مشاريعي. دوس على أي شجرة' : 'These are all my projects. Click any tree');
   };
 
-  const handleResponse = (ans: string) => {
-    const msg = guideLanguage === 'ar'
-     ? (ans === 'برمجة'? 'جميل! روح للشجر اللي مكتوب عليه "برمجة" عشان تشوف مشاريعك.' : 'اختيار رائع! الشجر اللي عليه "تصميم" هيوريك أعمالك الفنية.')
-      : (ans === 'Programming'? 'Great! Go to the trees labeled "Programming" to see your projects.' : 'Awesome! Trees with "Design" will show your artwork.');
-    setGuideMessage(msg);
+  const handleFilter = (type: string) => {
+    const filtered = allProjects.filter(p => p.type === type);
+    setProjects(filtered);
+    setGuideMessage(guideLanguage === 'ar' 
+      ? `دي مشاريع ${type}. دوس على الشجرة عشان التفاصيل` 
+      : `These are ${type} projects. Click a tree for details`);
   };
-
-  const isChoiceMsg = guideMessage?.includes('البرمجة ولا التصميم') || guideMessage?.includes('programming or design');
 
   return (
     <>
-      <button onClick={toggleMute} style={{
-        position: 'fixed', top: 20, right: 20, zIndex: 200,
-        background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none',
-        borderRadius: '50%', width: 40, height: 40, fontSize: 18,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        backdropFilter: 'blur(4px)', cursor: 'pointer'
-      }}>
-        {muted? '🔇' : '🎵'}
-      </button>
+      <div style={{ position: 'fixed', top: 20, left: 20, zIndex: 10 }}>
+        <button onClick={() => {}} style={{ padding: '12px 20px', borderRadius: 25, border: 'none', background: '#333', color: 'white', cursor: 'pointer' }}>
+          ⚙️ الإعدادات
+        </button>
+      </div>
 
-      {guideMessage && (
-        <div style={{
-          position: 'fixed', bottom: 30, left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.8)', color: 'white', padding: '16px 24px',
-          borderRadius: 12, maxWidth: '85%', textAlign: 'center', fontFamily: 'sans-serif',
-          zIndex: 100, backdropFilter: 'blur(8px)', fontSize: '0.9rem'
-        }}>
-          <p style={{ marginBottom: isChoiceMsg? 12 : 0 }}>{guideMessage}</p>
-          {isChoiceMsg && (
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => handleResponse(guideLanguage === 'ar'? 'برمجة' : 'Programming')} style={btnStyle}>
-                💻 {guideLanguage === 'ar'? 'برمجة' : 'Prog'}
-              </button>
-              <button onClick={() => handleResponse(guideLanguage === 'ar'? 'تصميم' : 'Design')} style={btnStyle}>
-                🎨 {guideLanguage === 'ar'? 'تصميم' : 'Design'}
-              </button>
-            </div>
-          )}
+      <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 10 }}>
+        <button style={{ padding: 12, borderRadius: '50%', border: 'none', background: '#333', color: 'white', cursor: 'pointer' }}>🔇</button>
+      </div>
+
+      {!selectedProject && (
+        <div style={{ position: 'fixed', bottom: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 10, background: 'rgba(20,20,20,0.9)', padding: 20, borderRadius: 15, textAlign: 'center', maxWidth: 300 }}>
+          <p style={{ color: 'white', marginBottom: 15 }}>{guideMessage || 'أهلاً بيك في متحف العقل! اختار القسم:'}</p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => handleFilter('برمجة')} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: primaryColor, color: 'black', cursor: 'pointer', fontWeight: 'bold' }}>
+              💻 برمجة
+            </button>
+            <button onClick={() => handleFilter('تصميم')} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: primaryColor, color: 'black', cursor: 'pointer', fontWeight: 'bold' }}>
+              🎨 تصميم
+            </button>
+            <button onClick={handleShowAll} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#555', color: 'white', cursor: 'pointer' }}>
+              🌲 الكل
+            </button>
+          </div>
         </div>
       )}
 
       {selectedProject && (
-        <div style={{
-          position: 'fixed', top: 30, right: 10, left: 10, maxWidth: 300, marginLeft: 'auto', marginRight: 'auto',
-          background: 'rgba(255,255,255,0.95)', color: '#111', padding: 20, borderRadius: 16,
-          zIndex: 101, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', fontFamily: 'sans-serif'
-        }}>
-          <h3 style={{ margin: 0 }}>{selectedProject.title}</h3>
-          <p style={{ margin: '8px 0' }}>{guideLanguage === 'ar'? 'النوع' : 'Type'}: {selectedProject.type}</p>
-          <p>{selectedProject.info}</p>
-          <button onClick={() => setSelectedProject(null)} style={btnStyle}>إغلاق</button>
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 20, background: 'rgba(20,20,20,0.95)', padding: 30, borderRadius: 15, border: `2px solid ${primaryColor}`, maxWidth: 400 }}>
+          <h2 style={{ color: primaryColor, marginTop: 0 }}>{selectedProject.title}</h2>
+          <p style={{ color: '#aaa' }}>النوع: {selectedProject.type}</p>
+          <p style={{ color: 'white' }}>{selectedProject.info}</p>
+          <button onClick={() => setSelectedProject(null)} style={{ marginTop: 20, padding: '10px 20px', borderRadius: 10, border: 'none', background: primaryColor, color: 'black', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>
+            إغلاق
+          </button>
         </div>
       )}
 
-      <ContactCard />
-      <SettingsPanel />
+      <div style={{ position: 'fixed', bottom: 40, left: 20, zIndex: 10 }}>
+        <button onClick={() => setSelectedProject({ id: 0, title: arName, type: 'بيانات', info: `الاسم: ${arName}\nEn: ${enName}\nEmail: ${email}\nPhone: ${phone}`, pos: [0,0,0] })} style={{ padding: '12px 20px', borderRadius: 25, border: 'none', background: primaryColor, color: 'black', cursor: 'pointer', fontWeight: 'bold' }}>
+          📋 بياناتي
+        </button>
+      </div>
     </>
   );
 }
-
-const btnStyle: React.CSSProperties = {
-  padding: '8px 16px', borderRadius: 8, border: 'none',
-  background: '#ffaa00', color: '#000', fontWeight: 'bold', cursor: 'pointer',
-  fontSize: '0.9rem'
-};
