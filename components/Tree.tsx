@@ -6,7 +6,7 @@ import { useStore } from './store';
 
 interface TreeProps {
   position: [number, number, number];
-  project: { id: number; title: string; type: string; info: string };
+  project: { id: number; title: string; type: string; info: string; pos: [number, number, number] };
 }
 
 export default function Tree({ position, project }: TreeProps) {
